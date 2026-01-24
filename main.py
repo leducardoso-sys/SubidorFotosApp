@@ -79,12 +79,12 @@ def main(page: ft.Page):
     page.add(
         ft.Container(
             content=ft.Column([
-                # CAMBIO 1: Icono como string y color como string ("blue")
-                ft.Icon(name="cloud_upload", size=60, color="blue"),
+                # CORRECCIÓN AQUÍ: Quitamos 'name=' y pasamos el string directo
+                ft.Icon("cloud_upload", size=60, color="blue"),
                 
                 ft.Text("Subir a Drive", size=24, weight="bold"),
                 ft.Divider(),
-                # CAMBIO 2: Color del borde como string ("blue")
+                
                 ft.TextField(ref=nombre_archivo, label="Nombre (ej: Habitación 101)", border_color="blue"),
                 
                 ft.Container(height=10),
@@ -92,7 +92,6 @@ def main(page: ft.Page):
                 ft.ElevatedButton(
                     "HACER FOTO", 
                     icon="camera_alt", 
-                    # CAMBIO 3: Estilos con colores en texto ("blue", "white")
                     style=ft.ButtonStyle(
                         bgcolor="blue", 
                         color="white", 
@@ -105,7 +104,7 @@ def main(page: ft.Page):
                 ft.Container(height=20),
                 ft.Text(ref=estado_texto, value="Listo", size=14, text_align="center"),
                 ft.Container(height=30),
-                ft.Text("v3.0 No-Errors Edition", size=10, color="grey")
+                ft.Text("v5.0 Positional Fix", size=10, color="grey")
             ], horizontal_alignment="center"),
             padding=20, alignment=ft.alignment.center
         )
