@@ -1,4 +1,5 @@
 import flet as ft
+import os
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
@@ -140,4 +141,8 @@ def main(page: ft.Page):
     )
 
 if __name__ == "__main__":
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=8080, host="0.0.0.0")
+    # Render asigna un puerto dinámico en la variable de entorno 'PORT'
+    # Si no hay variable (ej. en tu PC), usa el 8080
+    port = int(os.environ.get("PORT", 8080))
+    
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, host="0.0.0.0")
