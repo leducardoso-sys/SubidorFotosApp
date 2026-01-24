@@ -21,7 +21,7 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.LIGHT
     page.scroll = "auto"
     
-    # Alineación de la página (usando constantes modernas)
+    # Alineación de la página
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     
@@ -90,7 +90,7 @@ def main(page: ft.Page):
                 
                 ft.Container(height=10),
                 
-                # CAMBIO 1: Usamos FilledButton (el estándar moderno) para evitar avisos
+                # Botón Moderno (FilledButton)
                 ft.FilledButton(
                     "HACER FOTO", 
                     icon="camera_alt", 
@@ -106,13 +106,12 @@ def main(page: ft.Page):
                 ft.Container(height=20),
                 ft.Text(ref=estado_texto, value="Listo", size=14, text_align="center"),
                 ft.Container(height=30),
-                ft.Text("v7.0 FilledButton Fix", size=10, color="grey")
+                ft.Text("v7.1 Stable", size=10, color="grey")
             ], 
             horizontal_alignment=ft.CrossAxisAlignment.CENTER),
             
             padding=20,
-            # CAMBIO 2 (CRÍTICO): ft.Alignment(0,0) es la forma matemática de centrar.
-            # NO CAMBIES ESTO por 'ft.alignment.center' o fallará de nuevo.
+            # ESTO ES CRÍTICO: ft.Alignment(0, 0)
             alignment=ft.Alignment(0, 0)
         )
     )
