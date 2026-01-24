@@ -26,7 +26,7 @@ def main(page: ft.Page):
     nombre_archivo = ft.Ref[ft.TextField]()
     estado_texto = ft.Ref[ft.Text]()
     
-    # Función principal de subida
+    # Función de subida
     def procesar_y_subir(e):
         if not e.files: return
         
@@ -70,21 +70,18 @@ def main(page: ft.Page):
             estado_texto.current.update()
             print(ex)
 
-    # --- CAMBIO IMPORTANTE AQUÍ ---
-    # 1. Creamos el FilePicker vacío (sin argumentos)
+    # Configuración del selector de archivos (Método seguro)
     file_picker = ft.FilePicker()
-    
-    # 2. Le asignamos la función después. Esto evita el error de "keyword argument"
     file_picker.on_result = procesar_y_subir
-    
-    # 3. Lo añadimos a la página
     page.overlay.append(file_picker)
 
     # --- UI ---
     page.add(
         ft.Container(
             content=ft.Column([
-                ft.Icon(ft.icons.CLOUD_CIRCLE, size=60, color=ft.colors.BLUE_600),
+                # CAMBIO REALIZADO AQUÍ: Usamos CLOUD_UPLOAD que es 100% seguro
+                ft.Icon(ft.icons.CLOUD_UPLOAD, size=60, color=ft.colors.BLUE_600),
+                
                 ft.Text("Subir a Drive", size=24, weight="bold"),
                 ft.Divider(),
                 ft.TextField(ref=nombre_archivo, label="Nombre (ej: Habitación 101)", border_color=ft.colors.BLUE_400),
@@ -99,7 +96,7 @@ def main(page: ft.Page):
                 ft.Container(height=20),
                 ft.Text(ref=estado_texto, value="Listo", size=14, text_align="center"),
                 ft.Container(height=30),
-                ft.Text("v2.2 Stable Fix", size=10, color="grey")
+                ft.Text("v2.3 Final", size=10, color="grey")
             ], horizontal_alignment="center"),
             padding=20, alignment=ft.alignment.center
         )
