@@ -21,14 +21,13 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.LIGHT
     page.scroll = "auto"
     
-    # Alineación de la página
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    # Alineación clásica (compatible con 0.21.2)
+    page.vertical_alignment = "center"
+    page.horizontal_alignment = "center"
     
     nombre_archivo = ft.Ref[ft.TextField]()
     estado_texto = ft.Ref[ft.Text]()
     
-    # Función de subida
     def procesar_y_subir(e):
         if not e.files: return
         
@@ -81,7 +80,7 @@ def main(page: ft.Page):
     page.add(
         ft.Container(
             content=ft.Column([
-                ft.Icon("cloud_upload", size=60, color="blue"),
+                ft.Icon(name="cloud_upload", size=60, color="blue"),
                 
                 ft.Text("Subir a Drive", size=24, weight="bold"),
                 ft.Divider(),
@@ -90,8 +89,8 @@ def main(page: ft.Page):
                 
                 ft.Container(height=10),
                 
-                # Botón Moderno (FilledButton)
-                ft.FilledButton(
+                # Volvemos al botón clásico para asegurar compatibilidad
+                ft.ElevatedButton(
                     "HACER FOTO", 
                     icon="camera_alt", 
                     style=ft.ButtonStyle(
@@ -106,13 +105,12 @@ def main(page: ft.Page):
                 ft.Container(height=20),
                 ft.Text(ref=estado_texto, value="Listo", size=14, text_align="center"),
                 ft.Container(height=30),
-                ft.Text("v7.1 Stable", size=10, color="grey")
+                ft.Text("v8.0 Stable (Legacy)", size=10, color="grey")
             ], 
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+            horizontal_alignment="center"),
             
             padding=20,
-            # ESTO ES CRÍTICO: ft.Alignment(0, 0)
-            alignment=ft.Alignment(0, 0)
+            alignment=ft.alignment.center
         )
     )
 
