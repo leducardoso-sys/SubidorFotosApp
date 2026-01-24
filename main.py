@@ -8,10 +8,7 @@ import datetime
 import os
 
 # --- CONFIGURACIÓN ---
-# ID de la carpeta de Google Drive 
 DRIVE_FOLDER_ID = "PON_AQUI_EL_ID_DE_TU_CARPETA_DRIVE"
-
-# Nombre del archivo de credenciales
 CREDENTIALS_FILE = "credentials.json"
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
@@ -29,7 +26,7 @@ def main(page: ft.Page):
     nombre_archivo = ft.Ref[ft.TextField]()
     estado_texto = ft.Ref[ft.Text]()
     
-    # --- CORRECCIÓN AQUÍ: Hemos quitado ": ft.FilePickerResultEvent" ---
+    # Función principal de subida
     def procesar_y_subir(e):
         if not e.files: return
         
@@ -44,7 +41,6 @@ def main(page: ft.Page):
             final_name = f"{base_name}_{timestamp}.jpg"
 
             file_obj = e.files[0]
-            # Leemos el archivo en modo binario
             with open(file_obj.path, "rb") as f: img_bytes = f.read()
 
             img = Image.open(io.BytesIO(img_bytes))
@@ -65,7 +61,6 @@ def main(page: ft.Page):
             estado_texto.current.color = "green"
             estado_texto.current.update()
             
-            # Limpiamos el campo de texto para la siguiente foto
             nombre_archivo.current.value = ""
             nombre_archivo.current.update()
 
@@ -75,9 +70,17 @@ def main(page: ft.Page):
             estado_texto.current.update()
             print(ex)
 
-    file_picker = ft.FilePicker(on_result=procesar_y_subir)
+    # --- CAMBIO IMPORTANTE AQUÍ ---
+    # 1. Creamos el FilePicker vacío (sin argumentos)
+    file_picker = ft.FilePicker()
+    
+    # 2. Le asignamos la función después. Esto evita el error de "keyword argument"
+    file_picker.on_result = procesar_y_subir
+    
+    # 3. Lo añadimos a la página
     page.overlay.append(file_picker)
 
+    # --- UI ---
     page.add(
         ft.Container(
             content=ft.Column([
@@ -86,17 +89,22 @@ def main(page: ft.Page):
                 ft.Divider(),
                 ft.TextField(ref=nombre_archivo, label="Nombre (ej: Habitación 101)", border_color=ft.colors.BLUE_400),
                 ft.Container(height=10),
-                ft.ElevatedButton("HACER FOTO", icon=ft.icons.CAMERA_ALT, style=ft.ButtonStyle(bgcolor=ft.colors.BLUE_600, color="white", padding=20, shape=ft.RoundedRectangleBorder(radius=8)), on_click=lambda _: file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE), width=280),
+                ft.ElevatedButton(
+                    "HACER FOTO", 
+                    icon=ft.icons.CAMERA_ALT, 
+                    style=ft.ButtonStyle(bgcolor=ft.colors.BLUE_600, color="white", padding=20, shape=ft.RoundedRectangleBorder(radius=8)), 
+                    on_click=lambda _: file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE), 
+                    width=280
+                ),
                 ft.Container(height=20),
                 ft.Text(ref=estado_texto, value="Listo", size=14, text_align="center"),
                 ft.Container(height=30),
-                ft.Text("v2.1 Cloud Drive Fix", size=10, color="grey")
+                ft.Text("v2.2 Stable Fix", size=10, color="grey")
             ], horizontal_alignment="center"),
             padding=20, alignment=ft.alignment.center
         )
     )
 
 if __name__ == "__main__":
-    # Configuración de puerto para Render
     port = int(os.environ.get("PORT", 8080))
     ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, host="0.0.0.0")
