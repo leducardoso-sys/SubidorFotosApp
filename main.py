@@ -20,6 +20,8 @@ def main(page: ft.Page):
     page.title = "Senator Cloud Uploader"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.scroll = "auto"
+    
+    # Alineación de la página completa
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     
@@ -79,7 +81,6 @@ def main(page: ft.Page):
     page.add(
         ft.Container(
             content=ft.Column([
-                # CORRECCIÓN AQUÍ: Quitamos 'name=' y pasamos el string directo
                 ft.Icon("cloud_upload", size=60, color="blue"),
                 
                 ft.Text("Subir a Drive", size=24, weight="bold"),
@@ -89,6 +90,9 @@ def main(page: ft.Page):
                 
                 ft.Container(height=10),
                 
+                # Nota: Mantenemos ElevatedButton aunque avise de "deprecated"
+                # porque funciona bien y cambiarlo a Button() requiere cambiar todos los estilos.
+                # El aviso (warning) no romperá la app.
                 ft.ElevatedButton(
                     "HACER FOTO", 
                     icon="camera_alt", 
@@ -104,9 +108,15 @@ def main(page: ft.Page):
                 ft.Container(height=20),
                 ft.Text(ref=estado_texto, value="Listo", size=14, text_align="center"),
                 ft.Container(height=30),
-                ft.Text("v5.0 Positional Fix", size=10, color="grey")
-            ], horizontal_alignment="center"),
-            padding=20, alignment=ft.alignment.center
+                ft.Text("v6.0 Alignment Fix", size=10, color="grey")
+            ], 
+            # Alineación de la columna interna
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+            
+            padding=20,
+            # CORRECCIÓN AQUÍ: Usamos ft.Alignment(0,0) en lugar de ft.alignment.center
+            # (0,0) significa centro matemático. Esto no falla nunca.
+            alignment=ft.Alignment(0, 0)
         )
     )
 
