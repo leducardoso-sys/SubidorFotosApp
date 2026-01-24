@@ -70,7 +70,7 @@ def main(page: ft.Page):
             estado_texto.current.update()
             print(ex)
 
-    # Configuración del selector de archivos (Método seguro)
+    # Configuración del selector de archivos
     file_picker = ft.FilePicker()
     file_picker.on_result = procesar_y_subir
     page.overlay.append(file_picker)
@@ -79,8 +79,8 @@ def main(page: ft.Page):
     page.add(
         ft.Container(
             content=ft.Column([
-                # CAMBIO REALIZADO AQUÍ: Usamos CLOUD_UPLOAD que es 100% seguro
-                ft.Icon(ft.icons.CLOUD_UPLOAD, size=60, color=ft.colors.BLUE_600),
+                # CAMBIO 1: Usamos el nombre string "cloud_upload" (evita AttributeError)
+                ft.Icon(name="cloud_upload", size=60, color=ft.colors.BLUE_600),
                 
                 ft.Text("Subir a Drive", size=24, weight="bold"),
                 ft.Divider(),
@@ -88,7 +88,8 @@ def main(page: ft.Page):
                 ft.Container(height=10),
                 ft.ElevatedButton(
                     "HACER FOTO", 
-                    icon=ft.icons.CAMERA_ALT, 
+                    # CAMBIO 2: Usamos el nombre string "camera_alt"
+                    icon="camera_alt", 
                     style=ft.ButtonStyle(bgcolor=ft.colors.BLUE_600, color="white", padding=20, shape=ft.RoundedRectangleBorder(radius=8)), 
                     on_click=lambda _: file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE), 
                     width=280
@@ -96,7 +97,7 @@ def main(page: ft.Page):
                 ft.Container(height=20),
                 ft.Text(ref=estado_texto, value="Listo", size=14, text_align="center"),
                 ft.Container(height=30),
-                ft.Text("v2.3 Final", size=10, color="grey")
+                ft.Text("v2.4 String Icons", size=10, color="grey")
             ], horizontal_alignment="center"),
             padding=20, alignment=ft.alignment.center
         )
