@@ -1,5 +1,6 @@
 flet>=0.23.0
-uvicorn[standard]
+uvicorn==0.29.0
+websockets
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
