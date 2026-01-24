@@ -21,9 +21,9 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.LIGHT
     page.scroll = "auto"
     
-    # Alineación clásica (compatible con 0.21.2)
-    page.vertical_alignment = "center"
-    page.horizontal_alignment = "center"
+    # Alineación Moderna
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     
     nombre_archivo = ft.Ref[ft.TextField]()
     estado_texto = ft.Ref[ft.Text]()
@@ -80,7 +80,8 @@ def main(page: ft.Page):
     page.add(
         ft.Container(
             content=ft.Column([
-                ft.Icon(name="cloud_upload", size=60, color="blue"),
+                # Icono seguro (nombre directo)
+                ft.Icon("cloud_upload", size=60, color="blue"),
                 
                 ft.Text("Subir a Drive", size=24, weight="bold"),
                 ft.Divider(),
@@ -89,8 +90,8 @@ def main(page: ft.Page):
                 
                 ft.Container(height=10),
                 
-                # Volvemos al botón clásico para asegurar compatibilidad
-                ft.ElevatedButton(
+                # Botón Moderno (FilledButton)
+                ft.FilledButton(
                     "HACER FOTO", 
                     icon="camera_alt", 
                     style=ft.ButtonStyle(
@@ -105,9 +106,9 @@ def main(page: ft.Page):
                 ft.Container(height=20),
                 ft.Text(ref=estado_texto, value="Listo", size=14, text_align="center"),
                 ft.Container(height=30),
-                ft.Text("v8.0 Stable (Legacy)", size=10, color="grey")
+                ft.Text("v9.0 Modern Stable", size=10, color="grey")
             ], 
-            horizontal_alignment="center"),
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER),
             
             padding=20,
             alignment=ft.alignment.center
