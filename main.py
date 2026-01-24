@@ -21,7 +21,7 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.LIGHT
     page.scroll = "auto"
     
-    # Alineación de la página completa
+    # Alineación de la página (usando constantes modernas)
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     
@@ -90,10 +90,8 @@ def main(page: ft.Page):
                 
                 ft.Container(height=10),
                 
-                # Nota: Mantenemos ElevatedButton aunque avise de "deprecated"
-                # porque funciona bien y cambiarlo a Button() requiere cambiar todos los estilos.
-                # El aviso (warning) no romperá la app.
-                ft.ElevatedButton(
+                # CAMBIO 1: Usamos FilledButton (el estándar moderno) para evitar avisos
+                ft.FilledButton(
                     "HACER FOTO", 
                     icon="camera_alt", 
                     style=ft.ButtonStyle(
@@ -108,14 +106,13 @@ def main(page: ft.Page):
                 ft.Container(height=20),
                 ft.Text(ref=estado_texto, value="Listo", size=14, text_align="center"),
                 ft.Container(height=30),
-                ft.Text("v6.0 Alignment Fix", size=10, color="grey")
+                ft.Text("v7.0 FilledButton Fix", size=10, color="grey")
             ], 
-            # Alineación de la columna interna
             horizontal_alignment=ft.CrossAxisAlignment.CENTER),
             
             padding=20,
-            # CORRECCIÓN AQUÍ: Usamos ft.Alignment(0,0) en lugar de ft.alignment.center
-            # (0,0) significa centro matemático. Esto no falla nunca.
+            # CAMBIO 2 (CRÍTICO): ft.Alignment(0,0) es la forma matemática de centrar.
+            # NO CAMBIES ESTO por 'ft.alignment.center' o fallará de nuevo.
             alignment=ft.Alignment(0, 0)
         )
     )
