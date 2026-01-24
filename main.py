@@ -79,25 +79,33 @@ def main(page: ft.Page):
     page.add(
         ft.Container(
             content=ft.Column([
-                # CAMBIO 1: Usamos el nombre string "cloud_upload" (evita AttributeError)
-                ft.Icon(name="cloud_upload", size=60, color=ft.colors.BLUE_600),
+                # CAMBIO 1: Icono como string y color como string ("blue")
+                ft.Icon(name="cloud_upload", size=60, color="blue"),
                 
                 ft.Text("Subir a Drive", size=24, weight="bold"),
                 ft.Divider(),
-                ft.TextField(ref=nombre_archivo, label="Nombre (ej: Habitación 101)", border_color=ft.colors.BLUE_400),
+                # CAMBIO 2: Color del borde como string ("blue")
+                ft.TextField(ref=nombre_archivo, label="Nombre (ej: Habitación 101)", border_color="blue"),
+                
                 ft.Container(height=10),
+                
                 ft.ElevatedButton(
                     "HACER FOTO", 
-                    # CAMBIO 2: Usamos el nombre string "camera_alt"
                     icon="camera_alt", 
-                    style=ft.ButtonStyle(bgcolor=ft.colors.BLUE_600, color="white", padding=20, shape=ft.RoundedRectangleBorder(radius=8)), 
+                    # CAMBIO 3: Estilos con colores en texto ("blue", "white")
+                    style=ft.ButtonStyle(
+                        bgcolor="blue", 
+                        color="white", 
+                        padding=20, 
+                        shape=ft.RoundedRectangleBorder(radius=8)
+                    ), 
                     on_click=lambda _: file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE), 
                     width=280
                 ),
                 ft.Container(height=20),
                 ft.Text(ref=estado_texto, value="Listo", size=14, text_align="center"),
                 ft.Container(height=30),
-                ft.Text("v2.4 String Icons", size=10, color="grey")
+                ft.Text("v3.0 No-Errors Edition", size=10, color="grey")
             ], horizontal_alignment="center"),
             padding=20, alignment=ft.alignment.center
         )
