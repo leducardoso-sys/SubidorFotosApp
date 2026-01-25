@@ -123,4 +123,5 @@ def main(page: ft.Page):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, host="0.0.0.0", upload_dir=TEMP_UPLOAD_DIR, secret_key="SenatorSecretKey")
+    # IMPORTANTE: upload_dir="assets" y SIN secret_key aquí
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, host="0.0.0.0", upload_dir=TEMP_UPLOAD_DIR)
