@@ -9,7 +9,7 @@ import os
 import shutil
 
 # --- CONFIGURACIÓN ---
-DRIVE_FOLDER_ID = "PON_AQUI_EL_ID_DE_TU_CARPETA_DRIVE"
+DRIVE_FOLDER_ID = "1NMQDc_8bFfl4s_WVSX7pAKBUhckHRu4v"
 CREDENTIALS_FILE = "credentials.json"
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
@@ -167,3 +167,4 @@ if __name__ == "__main__":
     # IMPORTANTE: upload_dir="assets" define dónde aterrizan las fotos
     # ¡QUITA LA LÍNEA DE SECRET_KEY DE AQUÍ!
     ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, host="0.0.0.0", upload_dir=TEMP_UPLOAD_DIR)
+
