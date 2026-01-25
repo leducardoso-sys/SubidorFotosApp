@@ -1,22 +1,22 @@
 {
-  "name": "Fotos Cloud",
-  "short_name": "Fotos Cloud",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2196f3",
-  "description": "Subida de fotos a Drive",
-  "orientation": "portrait",
-  "icons": [
-    {
-      "src": "favicon.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "favicon.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+    "name": "Fotos Cloud",
+    "short_name": "Fotos Cloud",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#2196f3",
+    "description": "App para subir fotos",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "favicon.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "favicon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
 }
