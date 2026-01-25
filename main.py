@@ -6,11 +6,11 @@ import io
 import os
 
 # --- CONFIGURACIÓN ---
-# 1. TU URL DEL SCRIPT (Asegúrate de usar la URL con comillas)
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx15eHYTxUB-mQ1ZAvDLh7MAJbD9RQi5oaxAfJwgfSeaYeSB8HT3qVmg8usyujsUnouMQ/exec"
+# 1. TU URL DEL SCRIPT
+APPS_SCRIPT_URL = "1NMQDc_8bFfl4s_WVSX7pAKBUhckHRu4v"
 
-# 2. EL ID DE TU CARPETA (Para que el botón sepa dónde ir)
-DRIVE_FOLDER_ID = "1NMQDc_8bFfl4s_WVSX7pAKBUhckHRu4v"
+# 2. EL ID DE TU CARPETA
+DRIVE_FOLDER_ID = "https://script.google.com/macros/s/AKfycbx15eHYTxUB-mQ1ZAvDLh7MAJbD9RQi5oaxAfJwgfSeaYeSB8HT3qVmg8usyujsUnouMQ/exec"
 
 # Carpeta temporal
 TEMP_UPLOAD_DIR = "assets"
@@ -30,12 +30,19 @@ def main(page: ft.Page):
     # --- LÓGICA DE SUBIDA ---
     def procesar_final(nombre_fichero_servidor):
         try:
+            # Filtro de seguridad: Si suben un PDF o algo raro, lo ignoramos o intentamos procesar
+            # Como es "ANY", intentamos procesarlo igual. Si falla PIL, es que no era imagen.
+            if not nombre_fichero_servidor.lower().endswith(('.png', '.jpg', '.jpeg')):
+                 estado_texto.current.value = "⚠️ Error: Debes subir una FOTO, no otro archivo."
+                 estado_texto.current.color = "red"
+                 estado_texto.current.update()
+                 return
+
             estado_texto.current.value = "☁️ Enviando a la Nube..."
             estado_texto.current.update()
 
             # Nombre limpio
             raw_name = nombre_archivo.current.value.strip()
-            # Quitamos caracteres raros
             base_name = "".join([c for c in raw_name if c.isalnum() or c in (' ', '-', '_')]).strip()
             final_name = f"{base_name}.jpg"
 
@@ -64,7 +71,6 @@ def main(page: ft.Page):
             if response.status_code == 200 and "success" in response.text:
                 estado_texto.current.value = f"✅ ¡GUARDADA!\n{final_name}"
                 estado_texto.current.color = "green"
-                # Limpiamos el campo nombre para obligar a poner uno nuevo en la siguiente
                 nombre_archivo.current.value = ""
                 nombre_archivo.current.update()
             else:
@@ -106,25 +112,24 @@ def main(page: ft.Page):
         drive_url = f"https://drive.google.com/drive/folders/{DRIVE_FOLDER_ID}"
         page.launch_url(drive_url)
 
-    # --- NUEVA FUNCIÓN DE VALIDACIÓN ---
+    # --- VALIDACIÓN Y CAMBIO DE ESTRATEGIA ---
     def validar_y_abrir_camara(e):
         texto = nombre_archivo.current.value
         if not texto or texto.strip() == "":
-            # Si está vacío, error visual y vibración (visual)
             nombre_archivo.current.error_text = "⚠️ ¡Pon un nombre primero!"
             nombre_archivo.current.update()
-            
-            estado_texto.current.value = "⚠️ Debes escribir el nombre de la habitación antes de la foto."
+            estado_texto.current.value = "⚠️ Debes escribir el nombre antes."
             estado_texto.current.color = "red"
             estado_texto.current.update()
         else:
-            # Si todo bien, quitamos errores y abrimos cámara
             nombre_archivo.current.error_text = None
             nombre_archivo.current.update()
-            estado_texto.current.value = "Abriendo cámara..."
+            estado_texto.current.value = "Selecciona CÁMARA..."
             estado_texto.current.color = "blue"
             estado_texto.current.update()
-            file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE)
+            
+            # TRUCO: Usamos ANY (Cualquiera) para forzar al móvil a preguntar "¿Qué quieres usar?"
+            file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.ANY)
 
     file_picker = ft.FilePicker(on_result=iniciar_subida, on_upload=on_upload_progress)
     page.overlay.append(file_picker)
@@ -139,7 +144,6 @@ def main(page: ft.Page):
             ft.TextField(ref=nombre_archivo, label="Nombre (ej: Habitación 500)", border_color="blue", text_align="center"),
             ft.Container(height=10),
             
-            # El botón ahora llama a la función de validación
             ft.ElevatedButton("HACER FOTO", icon="camera_alt", 
                 style=ft.ButtonStyle(bgcolor="blue", color="white", padding=20, shape=ft.RoundedRectangleBorder(radius=10)),
                 on_click=validar_y_abrir_camara, width=280),
