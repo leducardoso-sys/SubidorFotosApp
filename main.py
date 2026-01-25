@@ -12,7 +12,6 @@ APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx15eHYTxUB-mQ1ZAvDLh
 
 # 2. EL ID DE TU CARPETA (Para que el botón sepa dónde ir)
 DRIVE_FOLDER_ID = "1NMQDc_8bFfl4s_WVSX7pAKBUhckHRu4v"
-
 # Carpeta temporal
 TEMP_UPLOAD_DIR = "assets"
 os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
@@ -37,7 +36,7 @@ def main(page: ft.Page):
             raw_name = nombre_archivo.current.value.strip()
             if not raw_name: raw_name = "foto"
             
-            # Quitamos espacios y caracteres raros, pero NO añadimos fecha
+            # Quitamos espacios y caracteres raros
             base_name = "".join([c for c in raw_name if c.isalnum() or c in (' ', '-', '_')]).strip()
             
             # Nombre final exacto (ej: hab500.jpg)
@@ -133,8 +132,11 @@ def main(page: ft.Page):
             ft.Container(height=20),
             ft.Text(ref=estado_texto, value="Listo", size=14, color="grey"),
             
-            ft.Container(height=20),
-            ft.Text("v16.0 Sin Fecha", size=10, color="grey")
+            ft.Container(height=40), # Un poco de espacio antes de la firma
+            
+            # --- TU FIRMA AQUÍ ---
+            ft.Text("By Eduardo Cardoso 2026 versión 1.00", size=12, color="grey", weight="bold")
+            
         ], alignment="center", horizontal_alignment="center")
     )
 
