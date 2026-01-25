@@ -3,12 +3,15 @@ import requests
 import base64
 from PIL import Image, ImageOps
 import io
-import datetime
 import os
 
 # --- CONFIGURACIÓN ---
-# ¡PEGA AQUÍ LA URL QUE TE DIO GOOGLE APPS SCRIPT!
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrdFdt96d4GRzkHK1OSRXho8-zzJ1f95C0Sggy9VbxXQMQKkmw8Uv50oSp0JLC23MBAA/exec"
+
+# 1. TU URL DEL SCRIPT (Asegúrate de usar la URL con comillas)
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx15eHYTxUB-mQ1ZAvDLh7MAJbD9RQi5oaxAfJwgfSeaYeSB8HT3qVmg8usyujsUnouMQ/exec"
+
+# 2. EL ID DE TU CARPETA (Para que el botón sepa dónde ir)
+DRIVE_FOLDER_ID = "1NMQDc_8bFfl4s_WVSX7pAKBUhckHRu4v"
 
 # Carpeta temporal
 TEMP_UPLOAD_DIR = "assets"
@@ -30,12 +33,15 @@ def main(page: ft.Page):
             estado_texto.current.value = "☁️ Enviando a la Nube..."
             estado_texto.current.update()
 
-            # 1. Preparar nombre
+            # 1. Preparar nombre LIMPIO (Sin fecha)
             raw_name = nombre_archivo.current.value.strip()
             if not raw_name: raw_name = "foto"
+            
+            # Quitamos espacios y caracteres raros, pero NO añadimos fecha
             base_name = "".join([c for c in raw_name if c.isalnum() or c in (' ', '-', '_')]).strip()
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            final_name = f"{base_name}_{timestamp}.jpg"
+            
+            # Nombre final exacto (ej: hab500.jpg)
+            final_name = f"{base_name}.jpg"
 
             # 2. Ruta local
             ruta_local = os.path.join(TEMP_UPLOAD_DIR, nombre_fichero_servidor)
@@ -46,7 +52,6 @@ def main(page: ft.Page):
             img.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
             if img.mode != "RGB": img = img.convert("RGB")
             
-            # Convertir a Base64 para enviar por el "Túnel"
             output_buffer = io.BytesIO()
             img.save(output_buffer, format="JPEG", quality=70, optimize=True)
             img_str = base64.b64encode(output_buffer.getvalue()).decode('utf-8')
@@ -61,16 +66,14 @@ def main(page: ft.Page):
             response = requests.post(APPS_SCRIPT_URL, json=payload)
             
             if response.status_code == 200 and "success" in response.text:
-                estado_texto.current.value = f"✅ ¡GUARDADA EN DRIVE!\n{final_name}"
+                estado_texto.current.value = f"✅ ¡GUARDADA!\n{final_name}"
                 estado_texto.current.color = "green"
             else:
                 raise Exception(f"Error Script: {response.text}")
 
             estado_texto.current.update()
-            nombre_archivo.current.value = ""
-            nombre_archivo.current.update()
             
-            # Limpieza
+            # Limpieza local
             if os.path.exists(ruta_local):
                 os.remove(ruta_local)
 
@@ -101,29 +104,40 @@ def main(page: ft.Page):
             files_to_upload.append(ft.FilePickerUploadFile(f.name, upload_url=upload_url))
         file_picker.upload(files_to_upload)
 
+    def abrir_drive(e):
+        drive_url = f"https://drive.google.com/drive/folders/{DRIVE_FOLDER_ID}"
+        page.launch_url(drive_url)
+
     file_picker = ft.FilePicker(on_result=iniciar_subida, on_upload=on_upload_progress)
     page.overlay.append(file_picker)
 
     page.add(
         ft.Column([
             ft.Icon(name="cloud_upload", size=60, color="blue"),
-            ft.Text("Subir a Carpeta", size=24, weight="bold"),
+            ft.Text("Senator Cloud", size=24, weight="bold"),
             ft.Container(height=20),
+            
             ft.TextField(ref=nombre_archivo, label="Nombre (ej: Habitación 500)", border_color="blue", text_align="center"),
             ft.Container(height=10),
+            
             ft.ElevatedButton("HACER FOTO", icon="camera_alt", 
                 style=ft.ButtonStyle(bgcolor="blue", color="white", padding=20, shape=ft.RoundedRectangleBorder(radius=10)),
                 on_click=lambda _: file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE), width=280),
+            
+            ft.Container(height=10),
+
+            ft.ElevatedButton("VER CARPETA DRIVE", icon="folder_open",
+                style=ft.ButtonStyle(bgcolor="green", color="white", padding=20, shape=ft.RoundedRectangleBorder(radius=10)),
+                on_click=abrir_drive, width=280),
+
             ft.Container(height=20),
             ft.Text(ref=estado_texto, value="Listo", size=14, color="grey"),
+            
             ft.Container(height=20),
-            ft.Text("v13.0 Script Bypass", size=10, color="grey")
+            ft.Text("v16.0 Sin Fecha", size=10, color="grey")
         ], alignment="center", horizontal_alignment="center")
     )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    # IMPORTANTE: upload_dir="assets" y SIN secret_key aquí
     ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, host="0.0.0.0", upload_dir=TEMP_UPLOAD_DIR)
-
-
