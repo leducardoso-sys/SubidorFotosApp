@@ -7,10 +7,10 @@ import os
 
 # --- CONFIGURACIÓN ---
 # 1. TU URL DEL SCRIPT
-APPS_SCRIPT_URL = "1NMQDc_8bFfl4s_WVSX7pAKBUhckHRu4v"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx15eHYTxUB-mQ1ZAvDLh7MAJbD9RQi5oaxAfJwgfSeaYeSB8HT3qVmg8usyujsUnouMQ/exec"
 
 # 2. EL ID DE TU CARPETA
-DRIVE_FOLDER_ID = "https://script.google.com/macros/s/AKfycbx15eHYTxUB-mQ1ZAvDLh7MAJbD9RQi5oaxAfJwgfSeaYeSB8HT3qVmg8usyujsUnouMQ/exec"
+DRIVE_FOLDER_ID = "1NMQDc_8bFfl4s_WVSX7pAKBUhckHRu4v"
 
 # Carpeta temporal
 TEMP_UPLOAD_DIR = "assets"
@@ -166,3 +166,4 @@ def main(page: ft.Page):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, host="0.0.0.0", upload_dir=TEMP_UPLOAD_DIR)
+
