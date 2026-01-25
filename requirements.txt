@@ -1,6 +1,4 @@
 flet==0.21.2
 uvicorn==0.25.0
-google-api-python-client
-google-auth-httplib2
-google-auth-oauthlib
+requests
 pillow
