@@ -6,7 +6,6 @@ import io
 import os
 
 # --- CONFIGURACIÓN ---
-
 # 1. TU URL DEL SCRIPT (Asegúrate de usar la URL con comillas)
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx15eHYTxUB-mQ1ZAvDLh7MAJbD9RQi5oaxAfJwgfSeaYeSB8HT3qVmg8usyujsUnouMQ/exec"
 
@@ -18,7 +17,6 @@ TEMP_UPLOAD_DIR = "assets"
 os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
 
 def main(page: ft.Page):
-    # CAMBIO 1: Título de la pestaña del navegador
     page.title = "Fotos Cloud"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.scroll = "auto"
@@ -29,25 +27,22 @@ def main(page: ft.Page):
     nombre_archivo = ft.Ref[ft.TextField]()
     estado_texto = ft.Ref[ft.Text]()
     
+    # --- LÓGICA DE SUBIDA ---
     def procesar_final(nombre_fichero_servidor):
         try:
             estado_texto.current.value = "☁️ Enviando a la Nube..."
             estado_texto.current.update()
 
-            # 1. Preparar nombre LIMPIO (Sin fecha)
+            # Nombre limpio
             raw_name = nombre_archivo.current.value.strip()
-            if not raw_name: raw_name = "foto"
-            
-            # Quitamos espacios y caracteres raros
+            # Quitamos caracteres raros
             base_name = "".join([c for c in raw_name if c.isalnum() or c in (' ', '-', '_')]).strip()
-            
-            # Nombre final exacto (ej: hab500.jpg)
             final_name = f"{base_name}.jpg"
 
-            # 2. Ruta local
+            # Ruta local
             ruta_local = os.path.join(TEMP_UPLOAD_DIR, nombre_fichero_servidor)
 
-            # 3. Optimizar Imagen
+            # Optimizar Imagen
             img = Image.open(ruta_local)
             img = ImageOps.exif_transpose(img)
             img.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
@@ -57,7 +52,7 @@ def main(page: ft.Page):
             img.save(output_buffer, format="JPEG", quality=70, optimize=True)
             img_str = base64.b64encode(output_buffer.getvalue()).decode('utf-8')
 
-            # 4. ENVIAR A GOOGLE SCRIPT
+            # Enviar a Google Script
             payload = {
                 "filename": final_name,
                 "file": img_str,
@@ -69,12 +64,14 @@ def main(page: ft.Page):
             if response.status_code == 200 and "success" in response.text:
                 estado_texto.current.value = f"✅ ¡GUARDADA!\n{final_name}"
                 estado_texto.current.color = "green"
+                # Limpiamos el campo nombre para obligar a poner uno nuevo en la siguiente
+                nombre_archivo.current.value = ""
+                nombre_archivo.current.update()
             else:
                 raise Exception(f"Error Script: {response.text}")
 
             estado_texto.current.update()
             
-            # Limpieza local
             if os.path.exists(ruta_local):
                 os.remove(ruta_local)
 
@@ -109,24 +106,43 @@ def main(page: ft.Page):
         drive_url = f"https://drive.google.com/drive/folders/{DRIVE_FOLDER_ID}"
         page.launch_url(drive_url)
 
+    # --- NUEVA FUNCIÓN DE VALIDACIÓN ---
+    def validar_y_abrir_camara(e):
+        texto = nombre_archivo.current.value
+        if not texto or texto.strip() == "":
+            # Si está vacío, error visual y vibración (visual)
+            nombre_archivo.current.error_text = "⚠️ ¡Pon un nombre primero!"
+            nombre_archivo.current.update()
+            
+            estado_texto.current.value = "⚠️ Debes escribir el nombre de la habitación antes de la foto."
+            estado_texto.current.color = "red"
+            estado_texto.current.update()
+        else:
+            # Si todo bien, quitamos errores y abrimos cámara
+            nombre_archivo.current.error_text = None
+            nombre_archivo.current.update()
+            estado_texto.current.value = "Abriendo cámara..."
+            estado_texto.current.color = "blue"
+            estado_texto.current.update()
+            file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE)
+
     file_picker = ft.FilePicker(on_result=iniciar_subida, on_upload=on_upload_progress)
     page.overlay.append(file_picker)
 
+    # --- INTERFAZ ---
     page.add(
         ft.Column([
             ft.Icon(name="cloud_upload", size=60, color="blue"),
-            
-            # CAMBIO 2: Título principal en la pantalla
             ft.Text("Fotos Cloud", size=30, weight="bold", color="blue"),
-            
             ft.Container(height=20),
             
             ft.TextField(ref=nombre_archivo, label="Nombre (ej: Habitación 500)", border_color="blue", text_align="center"),
             ft.Container(height=10),
             
+            # El botón ahora llama a la función de validación
             ft.ElevatedButton("HACER FOTO", icon="camera_alt", 
                 style=ft.ButtonStyle(bgcolor="blue", color="white", padding=20, shape=ft.RoundedRectangleBorder(radius=10)),
-                on_click=lambda _: file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE), width=280),
+                on_click=validar_y_abrir_camara, width=280),
             
             ft.Container(height=10),
 
@@ -138,8 +154,6 @@ def main(page: ft.Page):
             ft.Text(ref=estado_texto, value="Listo", size=14, color="grey"),
             
             ft.Container(height=40),
-            
-            # FIRMA
             ft.Text("By Eduardo Cardoso 2026 versión 1.00", size=12, color="grey", weight="bold")
             
         ], alignment="center", horizontal_alignment="center")
