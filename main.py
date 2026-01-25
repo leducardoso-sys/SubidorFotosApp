@@ -164,12 +164,6 @@ def main(page: ft.Page):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    # AÑADIDO: secret_key para permitir uploads seguros
-    ft.app(
-        target=main, 
-        view=ft.AppView.WEB_BROWSER, 
-        port=port, 
-        host="0.0.0.0", 
-        upload_dir=TEMP_UPLOAD_DIR,
-        secret_key="SenatorSecretKey2026"  # <--- ESTA ES LA CLAVE
-    )
+    # IMPORTANTE: upload_dir="assets" define dónde aterrizan las fotos
+    # ¡QUITA LA LÍNEA DE SECRET_KEY DE AQUÍ!
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, host="0.0.0.0", upload_dir=TEMP_UPLOAD_DIR)
