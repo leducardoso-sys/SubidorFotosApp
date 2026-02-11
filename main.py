@@ -6,13 +6,8 @@ import io
 import os
 
 # --- CONFIGURACIÓN ---
-# 1. TU URL DEL SCRIPT
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx15eHYTxUB-mQ1ZAvDLh7MAJbD9RQi5oaxAfJwgfSeaYeSB8HT3qVmg8usyujsUnouMQ/exec"
-
-# 2. EL ID DE TU CARPETA
 DRIVE_FOLDER_ID = "1NMQDc_8bFfl4s_WVSX7pAKBUhckHRu4v"
-
-# Carpeta temporal
 TEMP_UPLOAD_DIR = "assets"
 os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
 
@@ -24,40 +19,45 @@ def main(page: ft.Page):
     page.horizontal_alignment = "center"
     page.padding = 20
     
+    # Referencias
     nombre_archivo = ft.Ref[ft.TextField]()
     estado_texto = ft.Ref[ft.Text]()
-    
+    boton_foto = ft.Ref[ft.ElevatedButton]()
+    progreso = ft.Ref[ft.ProgressRing]()
+
+    def actualizar_interfaz(texto, color="grey", ocupado=False):
+        estado_texto.current.value = texto
+        estado_texto.current.color = color
+        progreso.current.visible = ocupado
+        boton_foto.current.disabled = ocupado
+        page.update()
+
     # --- LÓGICA DE SUBIDA ---
     def procesar_final(nombre_fichero_servidor):
         try:
-            # Filtro de seguridad: Si suben un PDF o algo raro, lo ignoramos o intentamos procesar
-            # Como es "ANY", intentamos procesarlo igual. Si falla PIL, es que no era imagen.
             if not nombre_fichero_servidor.lower().endswith(('.png', '.jpg', '.jpeg')):
-                 estado_texto.current.value = "⚠️ Error: Debes subir una FOTO, no otro archivo."
-                 estado_texto.current.color = "red"
-                 estado_texto.current.update()
+                 actualizar_interfaz("⚠️ Error: Debes subir una FOTO.", "red")
                  return
 
-            estado_texto.current.value = "☁️ Enviando a la Nube..."
-            estado_texto.current.update()
+            actualizar_interfaz("☁️ Enviando a la Nube...", "blue", True)
 
-            # Nombre limpio
+            # Nombre limpio y seguro
             raw_name = nombre_archivo.current.value.strip()
             base_name = "".join([c for c in raw_name if c.isalnum() or c in (' ', '-', '_')]).strip()
+            if not base_name: base_name = "foto_sin_nombre"
             final_name = f"{base_name}.jpg"
 
-            # Ruta local
             ruta_local = os.path.join(TEMP_UPLOAD_DIR, nombre_fichero_servidor)
 
-            # Optimizar Imagen
-            img = Image.open(ruta_local)
-            img = ImageOps.exif_transpose(img)
-            img.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
-            if img.mode != "RGB": img = img.convert("RGB")
-            
-            output_buffer = io.BytesIO()
-            img.save(output_buffer, format="JPEG", quality=70, optimize=True)
-            img_str = base64.b64encode(output_buffer.getvalue()).decode('utf-8')
+            # Optimizar Imagen (Uso de 'with' para liberar memoria RAM)
+            with Image.open(ruta_local) as img:
+                img = ImageOps.exif_transpose(img)
+                img.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+                if img.mode != "RGB": img = img.convert("RGB")
+                
+                output_buffer = io.BytesIO()
+                img.save(output_buffer, format="JPEG", quality=65, optimize=True)
+                img_str = base64.b64encode(output_buffer.getvalue()).decode('utf-8')
 
             # Enviar a Google Script
             payload = {
@@ -66,41 +66,32 @@ def main(page: ft.Page):
                 "mimeType": "image/jpeg"
             }
             
-            response = requests.post(APPS_SCRIPT_URL, json=payload)
+            response = requests.post(APPS_SCRIPT_URL, json=payload, timeout=30)
             
             if response.status_code == 200 and "success" in response.text:
-                estado_texto.current.value = f"✅ ¡GUARDADA!\n{final_name}"
-                estado_texto.current.color = "green"
+                actualizar_interfaz(f"✅ ¡GUARDADA!\n{final_name}", "green")
                 nombre_archivo.current.value = ""
                 nombre_archivo.current.update()
             else:
-                raise Exception(f"Error Script: {response.text}")
+                raise Exception("Error en respuesta del servidor")
 
-            estado_texto.current.update()
-            
             if os.path.exists(ruta_local):
                 os.remove(ruta_local)
 
         except Exception as ex:
-            estado_texto.current.value = f"❌ Error: {str(ex)}"
-            estado_texto.current.color = "red"
-            estado_texto.current.update()
-            print(ex)
+            actualizar_interfaz(f"❌ Error: {str(ex)}", "red")
 
     def on_upload_progress(e: ft.FilePickerUploadEvent):
         if e.error:
-            estado_texto.current.value = f"Error subida: {e.error}"
-            estado_texto.current.color = "red"
-            estado_texto.current.update()
-            return  
-        if e.progress == 1.0:
+            actualizar_interfaz(f"Error subida: {e.error}", "red")
+        elif e.progress == 1.0:
             procesar_final(e.file_name)
 
     def iniciar_subida(e: ft.FilePickerResultEvent):
-        if not e.files: return
-        estado_texto.current.value = "⬆️ Subiendo..."
-        estado_texto.current.color = "orange"
-        estado_texto.current.update()
+        if not e.files:
+            actualizar_interfaz("Listo")
+            return
+        actualizar_interfaz("⬆️ Procesando archivo...", "orange", True)
         
         files_to_upload = []
         for f in e.files:
@@ -109,27 +100,18 @@ def main(page: ft.Page):
         file_picker.upload(files_to_upload)
 
     def abrir_drive(e):
-        drive_url = f"https://drive.google.com/drive/folders/{DRIVE_FOLDER_ID}"
-        page.launch_url(drive_url)
+        page.launch_url(f"https://drive.google.com/drive/folders/{DRIVE_FOLDER_ID}")
 
-    # --- VALIDACIÓN Y CAMBIO DE ESTRATEGIA ---
     def validar_y_abrir_camara(e):
-        texto = nombre_archivo.current.value
-        if not texto or texto.strip() == "":
+        if not nombre_archivo.current.value.strip():
             nombre_archivo.current.error_text = "⚠️ ¡Pon un nombre primero!"
-            nombre_archivo.current.update()
-            estado_texto.current.value = "⚠️ Debes escribir el nombre antes."
-            estado_texto.current.color = "red"
-            estado_texto.current.update()
-        else:
-            nombre_archivo.current.error_text = None
-            nombre_archivo.current.update()
-            estado_texto.current.value = "Selecciona CÁMARA..."
-            estado_texto.current.color = "blue"
-            estado_texto.current.update()
-            
-            # TRUCO: Usamos ANY (Cualquiera) para forzar al móvil a preguntar "¿Qué quieres usar?"
-            file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.ANY)
+            page.update()
+            return
+        
+        nombre_archivo.current.error_text = None
+        actualizar_interfaz("Abriendo Cámara/Galería...", "blue", True)
+        # Cambiado a IMAGE para mayor estabilidad en móviles
+        file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.IMAGE)
 
     file_picker = ft.FilePicker(on_result=iniciar_subida, on_upload=on_upload_progress)
     page.overlay.append(file_picker)
@@ -139,31 +121,38 @@ def main(page: ft.Page):
         ft.Column([
             ft.Icon(name="cloud_upload", size=60, color="blue"),
             ft.Text("Fotos Cloud", size=30, weight="bold", color="blue"),
-            ft.Container(height=20),
-            
-            ft.TextField(ref=nombre_archivo, label="Nombre (ej: Habitación 500)", border_color="blue", text_align="center"),
             ft.Container(height=10),
             
-            ft.ElevatedButton("HACER FOTO", icon="camera_alt", 
+            ft.TextField(
+                ref=nombre_archivo, 
+                label="Nombre de la foto", 
+                border_color="blue", 
+                text_align="center",
+                on_submit=validar_y_abrir_camara
+            ),
+            
+            ft.Container(height=10),
+            ft.ProgressRing(ref=progreso, visible=False),
+            ft.Text(ref=estado_texto, value="Listo", size=14, color="grey", text_align="center"),
+            ft.Container(height=10),
+            
+            ft.ElevatedButton(
+                ref=boton_foto,
+                text="HACER FOTO / SUBIR", 
+                icon="camera_alt", 
                 style=ft.ButtonStyle(bgcolor="blue", color="white", padding=20, shape=ft.RoundedRectangleBorder(radius=10)),
-                on_click=validar_y_abrir_camara, width=280),
+                on_click=validar_y_abrir_camara, 
+                width=280
+            ),
             
-            ft.Container(height=10),
+            ft.TextButton("Ver Carpeta Drive", icon="folder_open", on_click=abrir_drive),
 
-            ft.ElevatedButton("VER CARPETA DRIVE", icon="folder_open",
-                style=ft.ButtonStyle(bgcolor="green", color="white", padding=20, shape=ft.RoundedRectangleBorder(radius=10)),
-                on_click=abrir_drive, width=280),
-
-            ft.Container(height=20),
-            ft.Text(ref=estado_texto, value="Listo", size=14, color="grey"),
-            
             ft.Container(height=40),
-            ft.Text("By Eduardo Cardoso 2026 versión 1.00", size=12, color="grey", weight="bold")
+            ft.Text("Versión 1.1 - Optimizada", size=10, color="grey")
             
         ], alignment="center", horizontal_alignment="center")
     )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    # Ahora sí funcionará porque la imagen pesa poco
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, host="0.0.0.0", upload_dir=TEMP_UPLOAD_DIR, assets_dir="assets")
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port)
