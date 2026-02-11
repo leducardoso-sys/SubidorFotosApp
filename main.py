@@ -11,8 +11,8 @@ import time
 # ==========================================
 MIS_CARPETAS = {
     "Principal": "1NMQDc_8bFfl4s_WVSX7pAKBUhckHRu4v",
-    "Instalaciones": "AQUÍ_ID_CARPETA_2",
-    "Reparaciones": "AQUÍ_ID_CARPETA_3",
+    "Instalaciones": "1vGQA_Ry_rMIDKrviYy1MMYw5AVafmrxS",
+    "Reparaciones": "1V-dR7JSFTI2jsNxtRgPyFV2Y4rBeYDWp",
 }
 
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzqudlusBOQBpmO86DmGRsQvpkpRYJW-rRxoHqQLIFMNhTjc7TYpANmtz6AjWZsoCrQ_A/exec"
@@ -169,4 +169,5 @@ def main(page: ft.Page):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, upload_dir=TEMP_UPLOAD_DIR)
+
 
