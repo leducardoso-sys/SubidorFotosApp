@@ -170,6 +170,13 @@ def main(page: ft.Page):
     )
 
 if __name__ == "__main__":
-    # Render usa la variable PORT
+    # Render usa la variable de entorno PORT
     port = int(os.environ.get("PORT", 8080))
-    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port)
+    
+    # IMPORTANTE: Se añade upload_dir para habilitar el endpoint de subida
+    ft.app(
+        target=main, 
+        view=ft.AppView.WEB_BROWSER, 
+        port=port,
+        upload_dir=TEMP_UPLOAD_DIR # <--- ESTO SOLUCIONA EL ERROR 405
+    )
