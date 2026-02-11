@@ -15,7 +15,7 @@ MIS_CARPETAS = {
     "Reparaciones": "AQUÍ_ID_CARPETA_3",
 }
 
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx15eHYTxUB-mQ1ZAvDLh7MAJbD9RQi5oaxAfJwgfSeaYeSB8HT3qVmg8usyujsUnouMQ/exec"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzqudlusBOQBpmO86DmGRsQvpkpRYJW-rRxoHqQLIFMNhTjc7TYpANmtz6AjWZsoCrQ_A/exec"
 TEMP_UPLOAD_DIR = "assets"
 os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
 
@@ -169,3 +169,4 @@ def main(page: ft.Page):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, upload_dir=TEMP_UPLOAD_DIR)
+
