@@ -25,6 +25,7 @@ def main(page: ft.Page):
     estado_texto = ft.Ref[ft.Text]()
     boton_foto = ft.Ref[ft.ElevatedButton]()
     progreso = ft.Ref[ft.ProgressRing]()
+    columna_historial = ft.Column(horizontal_alignment="center", spacing=5)
 
     def actualizar_interfaz(texto, color="grey", ocupado=False):
         estado_texto.current.value = texto
@@ -33,12 +34,22 @@ def main(page: ft.Page):
         boton_foto.current.disabled = ocupado
         page.update()
 
+    def agregar_al_historial(nombre):
+        # Insertar al principio y mantener solo los últimos 3
+        nuevo_item = ft.Row(
+            [ft.Icon(ft.icons.CHECK_CIRCLE, color="green", size=16), ft.Text(nombre, size=12)],
+            alignment="center"
+        )
+        columna_historial.controls.insert(0, nuevo_item)
+        if len(columna_historial.controls) > 3:
+            columna_historial.controls.pop()
+        page.update()
+
     # --- LÓGICA DE PROCESAMIENTO ---
     def procesar_final(nombre_fichero_servidor):
         try:
-            # Aceptamos cualquier archivo que venga del picker ANY, pero validamos que sea imagen aquí
             if not nombre_fichero_servidor.lower().endswith(('.png', '.jpg', '.jpeg', '.heic')):
-                 actualizar_interfaz("⚠️ Error: El archivo debe ser una imagen.", "red")
+                 actualizar_interfaz("⚠️ Error: Solo imágenes.", "red")
                  return
 
             actualizar_interfaz("☁️ Subiendo a Drive...", "blue", True)
@@ -50,7 +61,6 @@ def main(page: ft.Page):
 
             ruta_local = os.path.join(TEMP_UPLOAD_DIR, nombre_fichero_servidor)
 
-            # Optimización de RAM (Pillow)
             with Image.open(ruta_local) as img:
                 img = ImageOps.exif_transpose(img)
                 img.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
@@ -60,7 +70,6 @@ def main(page: ft.Page):
                 img.save(output_buffer, format="JPEG", quality=65, optimize=True)
                 img_str = base64.b64encode(output_buffer.getvalue()).decode('utf-8')
 
-            # Petición al Script de Google
             payload = {
                 "filename": final_name,
                 "file": img_str,
@@ -70,11 +79,12 @@ def main(page: ft.Page):
             response = requests.post(APPS_SCRIPT_URL, json=payload, timeout=45)
             
             if response.status_code == 200 and "success" in response.text:
-                actualizar_interfaz(f"✅ GUARDADA: {final_name}", "green")
+                actualizar_interfaz(f"✅ ¡ÉXITO!", "green")
+                agregar_al_historial(final_name)
                 nombre_archivo.current.value = ""
                 nombre_archivo.current.update()
             else:
-                raise Exception("Respuesta fallida de Google Drive")
+                raise Exception("Error en Google Drive")
 
             if os.path.exists(ruta_local):
                 os.remove(ruta_local)
@@ -86,17 +96,14 @@ def main(page: ft.Page):
         if e.error:
             actualizar_interfaz(f"Error: {e.error}", "red")
         elif e.progress == 1.0:
-            # Pequeño delay para asegurar que el archivo está escrito en disco
             time.sleep(0.5)
             procesar_final(e.file_name)
 
     def iniciar_subida(e: ft.FilePickerResultEvent):
         if not e.files:
-            actualizar_interfaz("Listo")
+            actualizar_interfaz("Listo para disparar")
             return
-        
-        actualizar_interfaz("⬆️ Cargando archivo...", "orange", True)
-        
+        actualizar_interfaz("⬆️ Cargando...", "orange", True)
         for f in e.files:
             upload_url = page.get_upload_url(f.name, 600)
             file_picker.upload([ft.FilePickerUploadFile(f.name, upload_url=upload_url)])
@@ -111,72 +118,56 @@ def main(page: ft.Page):
             return
         
         nombre_archivo.current.error_text = None
-        actualizar_interfaz("Esperando selección...", "blue", True)
-        
-        # RESTAURADO: FILE_TYPE.ANY para que aparezca la opción de Cámara
-        file_picker.pick_files(
-            allow_multiple=False, 
-            file_type=ft.FilePickerFileType.ANY 
-        )
+        actualizar_interfaz("Abriendo menú...", "blue", True)
+        file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.ANY)
 
-    # El FilePicker debe estar en el overlay
     file_picker = ft.FilePicker(on_result=iniciar_subida, on_upload=on_upload_progress)
     page.overlay.append(file_picker)
 
-    # --- DISEÑO DE LA APP ---
+    # --- DISEÑO ---
     page.add(
         ft.Column([
-            ft.Icon(name="cloud_upload_rounded", size=80, color="blue"),
-            ft.Text("Fotos Cloud", size=32, weight="bold", color="blue"),
-            ft.Text("Sube fotos renombradas a Drive", size=14, color="grey"),
+            ft.Icon(name="cloud_upload_rounded", size=70, color="blue"),
+            ft.Text("Fotos Cloud", size=28, weight="bold", color="blue"),
             
-            ft.Container(height=20),
+            ft.Container(height=15),
             
             ft.TextField(
                 ref=nombre_archivo, 
-                label="Nombre del archivo", 
-                hint_text="Ej: Instalación_001",
+                label="Nombre de la foto", 
                 border_radius=10,
                 border_color="blue", 
                 text_align="center",
-                on_submit=validar_y_abrir_camara
+                # on_submit eliminado para evitar apertura automática
             ),
             
             ft.Container(height=10),
             ft.ProgressRing(ref=progreso, visible=False),
             ft.Text(ref=estado_texto, value="Listo para disparar", size=14, color="grey"),
-            ft.Container(height=10),
             
             ft.ElevatedButton(
                 ref=boton_foto,
                 text="ABRIR CÁMARA", 
                 icon="camera_alt", 
-                style=ft.ButtonStyle(
-                    bgcolor="blue", 
-                    color="white", 
-                    padding=25, 
-                    shape=ft.RoundedRectangleBorder(radius=12)
-                ),
+                style=ft.ButtonStyle(bgcolor="blue", color="white", padding=25, shape=ft.RoundedRectangleBorder(radius=12)),
                 on_click=validar_y_abrir_camara, 
                 width=300
             ),
             
-            ft.TextButton("Abrir Carpeta en Google Drive", icon="folder_shared", on_click=abrir_drive),
+            ft.Container(height=10),
+            ft.TextButton("Ver Carpeta Drive", icon="folder_shared", on_click=abrir_drive),
 
-            ft.Container(height=50),
-            ft.Text("v1.2 - Sistema de Cámara Restaurado", size=10, color="grey700")
+            ft.Divider(height=40, thickness=1),
+            
+            ft.Text("HISTORIAL RECIENTE", size=12, weight="bold", color="grey700"),
+            columna_historial,
+
+            ft.Container(height=30),
+            ft.Text("v1.3 - Historial y flujo corregido", size=10, color="grey")
             
         ], alignment="center", horizontal_alignment="center")
     )
 
 if __name__ == "__main__":
-    # Render usa la variable de entorno PORT
     port = int(os.environ.get("PORT", 8080))
-    
-    # IMPORTANTE: Se añade upload_dir para habilitar el endpoint de subida
-    ft.app(
-        target=main, 
-        view=ft.AppView.WEB_BROWSER, 
-        port=port,
-        upload_dir=TEMP_UPLOAD_DIR # <--- ESTO SOLUCIONA EL ERROR 405
-    )
+    ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=port, upload_dir=TEMP_UPLOAD_DIR)
