@@ -7,7 +7,7 @@ import os
 import time
 
 # ==========================================
-# 1. CONFIGURACIÓN (Edita tus IDs aquí)
+# 1. CONFIGURACIÓN (Actualiza tus datos aquí)
 # ==========================================
 MIS_CARPETAS = {
     "Principal": "1NMQDc_8bFfl4s_WVSX7pAKBUhckHRu4v",
@@ -15,13 +15,14 @@ MIS_CARPETAS = {
     "Reparaciones": "1V-dR7JSFTI2jsNxtRgPyFV2Y4rBeYDWp",
 }
 
+# Sustituye por tu URL nueva de Google Apps Script
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYM89KQx19_z1okT1sDJV8FEwYbuZWPTNO8Fih701qgmEMlgBfO3Pj_XEwg8cYCR-LwQ/exec"
 TEMP_UPLOAD_DIR = "assets"
 os.makedirs(TEMP_UPLOAD_DIR, exist_ok=True)
 
-# ==========================================
-# 2. LÓGICA DE LA APLICACIÓN
-# ==========================================
+# URL del sonido de confirmación
+SFX_SUCCESS = "https://github.com/rafaelconde/escritorio/raw/master/ding.mp3"
+
 def main(page: ft.Page):
     page.title = "Fotos Cloud Pro"
     page.theme_mode = ft.ThemeMode.LIGHT
@@ -30,7 +31,11 @@ def main(page: ft.Page):
     page.horizontal_alignment = "center"
     page.padding = 20
 
-    # Recuperar última carpeta guardada
+    # Inicializar audio
+    audio_exito = ft.Audio(src=SFX_SUCCESS, autoplay=False)
+    page.overlay.append(audio_exito)
+
+    # Recuperar memoria de carpeta
     ultima_carpeta = page.client_storage.get("carpeta_preferida")
     id_inicial = ultima_carpeta if ultima_carpeta in MIS_CARPETAS.values() else list(MIS_CARPETAS.values())[0]
 
@@ -51,29 +56,15 @@ def main(page: ft.Page):
 
     def guardar_preferencia(e):
         page.client_storage.set("carpeta_preferida", selector_carpeta.current.value)
-        actualizar_interfaz(f"Carpeta guardada como predeterminada")
-
-    def agregar_al_historial(nombre, carpeta_nombre):
-        nuevo_item = ft.Row(
-            [ft.Icon(ft.icons.CHECK_CIRCLE, color="green", size=16), 
-             ft.Text(f"{nombre} -> {carpeta_nombre}", size=11)],
-            alignment="center"
-        )
-        columna_historial.controls.insert(0, nuevo_item)
-        if len(columna_historial.controls) > 3:
-            columna_historial.controls.pop()
-        page.update()
+        actualizar_interfaz("Carpeta predeterminada actualizada")
 
     def abrir_drive_actual(e):
-        # Abre la carpeta que esté seleccionada en el Dropdown en ese momento
-        id_actual = selector_carpeta.current.value
-        url = f"https://drive.google.com/drive/folders/{id_actual}"
-        page.launch_url(url)
+        page.launch_url(f"https://drive.google.com/drive/folders/{selector_carpeta.current.value}")
 
     def procesar_final(nombre_fichero_servidor):
         try:
             actualizar_interfaz("☁️ Subiendo a Drive...", "blue", True)
-
+            
             id_destino = selector_carpeta.current.value
             nombre_destino = next(k for k, v in MIS_CARPETAS.items() if v == id_destino)
 
@@ -83,11 +74,15 @@ def main(page: ft.Page):
 
             ruta_local = os.path.join(TEMP_UPLOAD_DIR, nombre_fichero_servidor)
 
+            # --- PROCESAMIENTO DE IMAGEN ---
             with Image.open(ruta_local) as img:
                 img = ImageOps.exif_transpose(img)
-                img.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+                # AJUSTE A 1400px: Ideal para velocidad y calidad en documentos
+                img.thumbnail((1400, 1400), Image.Resampling.LANCZOS)
+                
                 output_buffer = io.BytesIO()
-                img.convert("RGB").save(output_buffer, format="JPEG", quality=65, optimize=True)
+                # Calidad 80: Excelente nitidez
+                img.convert("RGB").save(output_buffer, format="JPEG", quality=80, optimize=True)
                 img_str = base64.b64encode(output_buffer.getvalue()).decode('utf-8')
 
             payload = {
@@ -100,13 +95,21 @@ def main(page: ft.Page):
             response = requests.post(APPS_SCRIPT_URL, json=payload, timeout=45)
             
             if response.status_code == 200 and "success" in response.text:
+                audio_exito.play() # Confirmación sonora
                 actualizar_interfaz("✅ ¡SUBIDA CON ÉXITO!", "green")
-                agregar_al_historial(final_name, nombre_destino)
-                # IMPORTANTE: Solo limpiamos el nombre, la carpeta se queda como está
+                
+                # Actualizar historial
+                nuevo_item = ft.Row([
+                    ft.Icon(ft.icons.CHECK_CIRCLE, color="green", size=16), 
+                    ft.Text(f"{final_name} -> {nombre_destino}", size=11)
+                ], alignment="center")
+                columna_historial.controls.insert(0, nuevo_item)
+                if len(columna_historial.controls) > 3: columna_historial.controls.pop()
+                
                 nombre_archivo.current.value = ""
                 nombre_archivo.current.update()
             else:
-                raise Exception("Error en Google Drive")
+                raise Exception("Error en respuesta de Drive")
 
             if os.path.exists(ruta_local): os.remove(ruta_local)
 
@@ -122,7 +125,7 @@ def main(page: ft.Page):
         if not e.files:
             actualizar_interfaz("Listo")
             return
-        actualizar_interfaz("⬆️ Cargando...", "orange", True)
+        actualizar_interfaz("⬆️ Cargando archivo...", "orange", True)
         file_picker.upload([ft.FilePickerUploadFile(e.files[0].name, upload_url=page.get_upload_url(e.files[0].name, 600))])
 
     def validar_y_abrir_camara(e):
@@ -130,7 +133,7 @@ def main(page: ft.Page):
             nombre_archivo.current.error_text = "⚠️ Escribe un nombre primero"
             page.update()
             return
-        actualizar_interfaz("Abriendo menú...", "blue", True)
+        actualizar_interfaz("Esperando selección...", "blue", True)
         file_picker.pick_files(allow_multiple=False, file_type=ft.FilePickerFileType.ANY)
 
     file_picker = ft.FilePicker(on_result=iniciar_subida, on_upload=on_upload_progress)
@@ -167,7 +170,6 @@ def main(page: ft.Page):
                 width=300
             ),
             
-            # Botón restaurado para ver la carpeta actual en Drive
             ft.TextButton("Abrir Carpeta Actual en Drive", icon="folder_open", on_click=abrir_drive_actual),
 
             ft.Divider(height=30, thickness=1),
@@ -175,7 +177,6 @@ def main(page: ft.Page):
             columna_historial,
 
             ft.Container(height=40),
-            # Footer restaurado
             ft.Text("Software Development by Eduardo Cardoso 2026", size=11, color="grey700", weight="bold")
             
         ], alignment="center", horizontal_alignment="center")
